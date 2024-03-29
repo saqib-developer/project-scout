@@ -4,7 +4,6 @@ import { get, ref as databaseRef, getDatabase, set } from "firebase/database";
 import React, { useState, useEffect } from "react";
 import styles from "./admin.module.css";
 
-
 export default function Admin() {
   const firebaseConfig = {
     apiKey: "AIzaSyAitg_ZCEIPOhb6R7l_SOo4vpuhzjwKGQQ",
@@ -42,7 +41,7 @@ export default function Admin() {
     });
   }, []);
 
-  const projectAccept =  (userid) => {
+  const projectAccept = (userid) => {
     try {
       const userRef = databaseRef(db, `users/${userid}`);
       get(userRef)
@@ -55,9 +54,20 @@ export default function Admin() {
             time: snapshot.val().time,
             username: snapshot.val().username,
           });
-          const userEmail = snapshot.val().username; // Extract user email
 
-          //   window.location.href = "/";
+          const userEmail = snapshot.val().username;
+          const subject = "Project Accepted!";
+          const message = "Your project has been accepted by the Admin.";
+
+          fetch("/api/send-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userEmail, subject, message }),
+          })
+            .then((response) => response.json())
+            .then((data) => console.log("Email response:", data))
+            .catch((error) => console.error("Error sending email:", error));
+          window.location.href = "/";
         })
         .catch((error) => {
           console.error("Error fetching data from Firebase Realtime Database:", error);
@@ -81,7 +91,20 @@ export default function Admin() {
             username: snapshot.val().username,
           });
 
-          //   window.location.href = "/";
+          const userEmail = snapshot.val().username;
+          const subject = "Project Rejected!";
+          const message = "Your project has been Rejected by the Admin.";
+
+          fetch("/api/send-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userEmail, subject, message }),
+          })
+            .then((response) => response.json())
+            .then((data) => console.log("Email response:", data))
+            .catch((error) => console.error("Error sending email:", error));
+
+          window.location.href = "/";
         })
         .catch((error) => {
           console.error("Error fetching data from Firebase Realtime Database:", error);
