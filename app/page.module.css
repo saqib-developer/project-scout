@@ -1,230 +1,182 @@
+.header {
+  padding: 4px 13px;
+  background-color: white;
+  box-shadow: 0px 2px 11px #00000024;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+}
+
+.logoContainer,
+.navigationBar {
+  display: flex;
+  align-items: center;
+}
+
+.ul {
+  list-style: none;
+  font-size: 1em;
+  justify-content: space-around;
+  display: flex;
+  height: 100%;
+}
+
+.li {
+  transition: color 0.5s ease;
+}
+
+.li:hover {
+  color: orange;
+}
+
+.li::after {
+  content: "";
+  display: flex;
+  width: 100%;
+  height: 2px;
+  background-color: orange;
+  transform-origin: right;
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.li:hover::after {
+  transform-origin: left;
+  transform: scaleX(1);
+}
+
+.li > * {
+  padding: 0 15px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  font-family: sans-serif;
+  width: 100px;
+  justify-content: center;
+  font-size: 1.1em;
+}
+
+.header span {
+  margin-left: 5px;
+  font-family: system-ui;
+  font-size: 0.8em;
+  text-shadow: 1px 1px 1px #0000001c;
+}
+
+.img {
+  height: auto;
+}
+
+.btn {
+  background-color: #ff000070;
+  border: 2px solid red;
+  border-radius: 8px;
+  padding: 8px;
+  color: black;
+  font-size: 1.01em;
+  margin-right: 17px;
+  cursor: pointer;
+}
+
+.nameContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.7em;
+}
+
 .main {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   align-items: center;
-  padding: 6rem;
-  min-height: 100vh;
-}
-
-.description {
-  display: inherit;
-  justify-content: inherit;
-  align-items: inherit;
-  font-size: 0.85rem;
-  max-width: var(--max-width);
-  width: 100%;
-  z-index: 2;
-  font-family: var(--font-mono);
-}
-
-.description a {
-  display: flex;
   justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
+  margin-top: 35px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
 }
 
-.description p {
-  position: relative;
-  margin: 0;
-  padding: 1rem;
-  background-color: rgba(var(--callout-rgb), 0.5);
-  border: 1px solid rgba(var(--callout-border-rgb), 0.3);
-  border-radius: var(--border-radius);
-}
-
-.code {
-  font-weight: 700;
-  font-family: var(--font-mono);
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(25%, auto));
-  max-width: 100%;
-  width: var(--max-width);
-}
-
-.card {
-  padding: 1rem 1.2rem;
-  border-radius: var(--border-radius);
-  background: rgba(var(--card-rgb), 0);
-  border: 1px solid rgba(var(--card-border-rgb), 0);
-  transition: background 200ms, border 200ms;
-}
-
-.card span {
-  display: inline-block;
-  transition: transform 200ms;
-}
-
-.card h2 {
-  font-weight: 600;
-  margin-bottom: 0.7rem;
-}
-
-.card p {
-  margin: 0;
-  opacity: 0.6;
-  font-size: 0.9rem;
-  line-height: 1.5;
-  max-width: 30ch;
-  text-wrap: balance;
-}
-
-.center {
+.container {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  position: relative;
-  padding: 4rem 0;
+  justify-content: center;
+  background: #ffa5003b;
+  border: 2px solid orange;
+  border-radius: 32px;
+  padding: 42px 147px;
 }
 
-.center::before {
-  background: var(--secondary-glow);
-  border-radius: 50%;
-  width: 480px;
-  height: 360px;
-  margin-left: -400px;
+.container img {
+  margin-bottom: 14px;
 }
 
-.center::after {
-  background: var(--primary-glow);
-  width: 240px;
-  height: 180px;
-  z-index: -1;
+.container label {
+  background-color: dodgerblue;
+  padding: 8px;
+  margin-top: 10px;
+  border-radius: 5px;
+  color: white;
+  font-size: 1.1em;
+  cursor: pointer;
 }
 
-.center::before,
-.center::after {
-  content: "";
-  left: 50%;
-  position: absolute;
-  filter: blur(45px);
-  transform: translateZ(0);
+.container input {
+  display: none;
 }
 
-.logo {
-  position: relative;
-}
-/* Enable hover only on non-touch devices */
-@media (hover: hover) and (pointer: fine) {
-  .card:hover {
-    background: rgba(var(--card-rgb), 0.1);
-    border: 1px solid rgba(var(--card-border-rgb), 0.15);
-  }
-
-  .card:hover span {
-    transform: translateX(4px);
-  }
+.progressBarContainer {
+  background: white;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  padding: 39px;
+  border-radius: 13px;
 }
 
-@media (prefers-reduced-motion) {
-  .card:hover span {
-    transform: none;
-  }
+.progressBar {
+  border: 1px solid grey;
+  height: 13px;
+  width: 225px;
 }
 
-/* Mobile */
-@media (max-width: 700px) {
-  .content {
-    padding: 4rem;
-  }
-
-  .grid {
-    grid-template-columns: 1fr;
-    margin-bottom: 120px;
-    max-width: 320px;
-    text-align: center;
-  }
-
-  .card {
-    padding: 1rem 2.5rem;
-  }
-
-  .card h2 {
-    margin-bottom: 0.5rem;
-  }
-
-  .center {
-    padding: 8rem 0 6rem;
-  }
-
-  .center::before {
-    transform: none;
-    height: 300px;
-  }
-
-  .description {
-    font-size: 0.8rem;
-  }
-
-  .description a {
-    padding: 1rem;
-  }
-
-  .description p,
-  .description div {
-    display: flex;
-    justify-content: center;
-    position: fixed;
-    width: 100%;
-  }
-
-  .description p {
-    align-items: center;
-    inset: 0 0 auto;
-    padding: 2rem 1rem 1.4rem;
-    border-radius: 0;
-    border: none;
-    border-bottom: 1px solid rgba(var(--callout-border-rgb), 0.25);
-    background: linear-gradient(
-      to bottom,
-      rgba(var(--background-start-rgb), 1),
-      rgba(var(--callout-rgb), 0.5)
-    );
-    background-clip: padding-box;
-    backdrop-filter: blur(24px);
-  }
-
-  .description div {
-    align-items: flex-end;
-    pointer-events: none;
-    inset: auto 0 0;
-    padding: 2rem;
-    height: 200px;
-    background: linear-gradient(
-      to bottom,
-      transparent 0%,
-      rgb(var(--background-end-rgb)) 40%
-    );
-    z-index: 1;
-  }
+.progressBar div {
+  height: 100%;
+  background-color: orange;
+  margin-bottom: 20px;
 }
 
-/* Tablet and Smaller Desktop */
-@media (min-width: 701px) and (max-width: 1120px) {
-  .grid {
-    grid-template-columns: repeat(2, 50%);
-  }
+.fileContainer {
+  width: 80%;
+  padding: 10px;
+  background-color: white;
 }
 
-@media (prefers-color-scheme: dark) {
-  .vercelLogo {
-    filter: invert(1);
-  }
-
-  .logo {
-    filter: invert(1) drop-shadow(0 0 0.3rem #ffffff70);
-  }
+.fileDetail {
+  display: flex;
+  flex-wrap: wrap;
 }
 
-@keyframes rotate {
-  from {
-    transform: rotate(360deg);
-  }
-  to {
-    transform: rotate(0deg);
-  }
+.fileImgContainer img {
+  height: auto;
+}
+
+.fileData {
+  margin-left: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.fileNavigation {
+  display: flex;
+  justify-content: space-evenly;
+  margin-top: 15px;
+}
+
+.fileNavigation a {
+  background-color: #ffa5007a;
+  border: 2px solid orange;
+  border-radius: 8px;
+  padding: 6px 13px;
+  color: black;
+  font-size: 1.01em;
 }

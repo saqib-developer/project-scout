@@ -1,0 +1,6 @@
+This favicon was generated using the following font:
+
+- Font Title: Edu NSW ACT Foundation
+- Font Author: Copyright 2022 The AU School Handwriting Fonts Project Authors (https://github.com/MezMerrit/AU-School-Handwriting-Fonts)
+- Font Source: https://fonts.gstatic.com/s/edunswactfoundation/v2/raxRHjqJtsNBFUi8WO0vUBgc9D-2lV_oQdCAYlt_QTQ0vUxJki9tovGLeC-sfguJ.ttf
+- Font License: SIL Open Font License, 1.1 (http://scripts.sil.org/OFL))
