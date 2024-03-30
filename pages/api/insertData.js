@@ -10,7 +10,6 @@ const pool = new Pool({
 export default async function handler(req, res) {
   if (req.method === "POST") {
     try {
-      // Extract data from the request body
       const { id, name, username, status, filename, file, time } = req.body;
 
       const queryText =`
