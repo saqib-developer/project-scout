@@ -1,6 +1,5 @@
 "use client";
 import { initializeApp } from "firebase/app";
-import { get, ref as databaseRef, getDatabase, set } from "firebase/database";
 import React, { useState, useEffect } from "react";
 import styles from "./admin.module.css";
 
@@ -16,48 +15,55 @@ export default function Admin() {
   };
 
   const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
 
   const [projects, setProjects] = useState([]);
   useEffect(() => {
-    get(databaseRef(db, `users/`)).then((snapshot) => {
-      let temp = [];
-      for (const key in snapshot.val()) {
-        if (Object.hasOwnProperty.call(snapshot.val(), key)) {
-          const element = snapshot.val()[key];
-          console.log(element);
-          if (element.status === "submitted") {
-            temp.push({
-              userid: key,
-              name: element.name,
-              fileName: element.fileName,
-              submittedOn: element.time,
-              url: element.file,
-            });
-          }
-        }
+    const getData = async () => {
+      const getresponse = await fetch(`/api/getAllUsers`);
+
+      if (!getresponse.ok) {
+        throw new Error("Failed to fetch data");
       }
-      setProjects(temp);
-    });
+
+      // Parse the getresponse body as JSON
+      const data = await getresponse.json();
+      setProjects(data.data);
+    };
+    getData();
   }, []);
 
-  const projectAccept = (userid) => {
+  const projectResult = (userid, result) => {
     try {
-      const userRef = databaseRef(db, `users/${userid}`);
-      get(userRef)
-        .then((snapshot) => {
-          set(userRef, {
-            file: snapshot.val().file,
-            fileName: snapshot.val().fileName,
-            name: snapshot.val().name,
-            status: "accepted",
-            time: snapshot.val().time,
-            username: snapshot.val().username,
-          });
+      document.getElementById(`fileNavigation-${userid}`).style.display = "none";
 
-          const userEmail = snapshot.val().username;
-          const subject = "Project Accepted!";
-          const message = "Your project has been accepted by the Admin.";
+      projects.forEach(async (value) => {
+        if (value.id === userid) {
+          const response = await fetch("/api/insertData", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+
+            body: JSON.stringify({
+              id: `${userid}`,
+              name: value.name,
+              username: value.username,
+              status: result,
+              filename: value.filename,
+              file: value.file,
+              time: value.time,
+            }),
+          });
+          if (!response.ok) {
+            throw new Error("Failed to insert data");
+          } else {
+            const data = await response.json();
+            console.log(data);
+          }
+
+          const userEmail = value.username;
+          const subject = `Project ${result}!`;
+          const message = `Your project has been ${result} by the Admin.`;
 
           fetch("/api/send-email", {
             method: "POST",
@@ -65,50 +71,13 @@ export default function Admin() {
             body: JSON.stringify({ userEmail, subject, message }),
           })
             .then((response) => response.json())
-            .then((data) => console.log("Email response:", data))
+            .then((data) => {
+              console.log("Email response:", data);
+              window.location.href = "/";
+            })
             .catch((error) => console.error("Error sending email:", error));
-          window.location.href = "/";
-        })
-        .catch((error) => {
-          console.error("Error fetching data from Firebase Realtime Database:", error);
-        });
-    } catch (error) {
-      console.error("Error updating the status:", error);
-    }
-  };
-
-  const projectReject = (userid) => {
-    try {
-      const userRef = databaseRef(db, `users/${userid}`);
-      get(userRef)
-        .then((snapshot) => {
-          set(userRef, {
-            file: snapshot.val().file,
-            fileName: snapshot.val().fileName,
-            name: snapshot.val().name,
-            status: "rejected",
-            time: snapshot.val().time,
-            username: snapshot.val().username,
-          });
-
-          const userEmail = snapshot.val().username;
-          const subject = "Project Rejected!";
-          const message = "Your project has been Rejected by the Admin.";
-
-          fetch("/api/send-email", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userEmail, subject, message }),
-          })
-            .then((response) => response.json())
-            .then((data) => console.log("Email response:", data))
-            .catch((error) => console.error("Error sending email:", error));
-
-          window.location.href = "/";
-        })
-        .catch((error) => {
-          console.error("Error fetching data from Firebase Realtime Database:", error);
-        });
+        }
+      });
     } catch (error) {
       console.error("Error updating the status:", error);
     }
@@ -119,25 +88,27 @@ export default function Admin() {
       <h1>Project Proposals</h1>
       <div className={styles.projects}>
         {projects.length !== 0 ? (
-          projects.map((value, index) => (
-            <div className={styles.fileDetail}>
-              <a key={index} href={value.url} download target="_blank" rel="noreferrer" className={styles.fileImgContainer}>
-                <div className={styles.fileData}>
-                  <p style={{ fontSize: "1.1em", fontWeight: "bolder" }}>{value.name}</p>
-                  <p>Submitted on: {new Date(value.submittedOn).toLocaleDateString("en-GB")}</p>
-                  <p>Click to View file</p>
+          projects.map((value, index) =>
+            value.status === "submitted" ? (
+              <div key={index} className={styles.fileDetail}>
+                <a href={value.file} download target="_blank" rel="noreferrer" className={styles.fileImgContainer}>
+                  <div className={styles.fileData}>
+                    <p style={{ fontSize: "1.1em", fontWeight: "bolder" }}>{value.name}</p>
+                    <p>Submitted on: {new Date(parseInt(value.time)).toLocaleDateString("en-GB")}</p>
+                    <p>Click to View file</p>
+                  </div>
+                </a>
+                <div className={styles.fileNavigation} id={`fileNavigation-${value.id}`}>
+                  <button onClick={() => projectResult(value.id, "Accepted")} className={styles.secandary}>
+                    Accept
+                  </button>
+                  <button onClick={() => projectResult(value.id, "Rejected")} className={styles.btn}>
+                    Reject
+                  </button>
                 </div>
-              </a>
-              <div className={styles.fileNavigation}>
-                <button onClick={() => projectAccept(value.userid)} className={styles.secandary}>
-                  Accept
-                </button>
-                <button onClick={() => projectReject(value.userid)} className={styles.btn}>
-                  Reject
-                </button>
               </div>
-            </div>
-          ))
+            ) : null
+          )
         ) : (
           <p>No Project Proposals to Show</p>
         )}

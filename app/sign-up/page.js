@@ -5,45 +5,49 @@ import Image from "next/image";
 import styles from "./sign-up.module.css";
 import { initializeApp } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword, AuthErrorCodes } from "firebase/auth";
-import { getDatabase, ref as databaseRef, set } from "firebase/database";
 
 export default function Signup() {
   const [name, setName] = useState();
   const [username, setUsername] = useState();
   const [password, setPassword] = useState();
 
+  const firebaseConfig = {
+    apiKey: "AIzaSyAitg_ZCEIPOhb6R7l_SOo4vpuhzjwKGQQ",
+    authDomain: "proposal-scout.firebaseapp.com",
+    projectId: "proposal-scout",
+    storageBucket: "proposal-scout.appspot.com",
+    messagingSenderId: "561559952969",
+    appId: "1:561559952969:web:09dce9fdf59c2dca146998",
+    measurementId: "G-V3607WBKEX",
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
   const createAccount = async (event) => {
     event.preventDefault();
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAitg_ZCEIPOhb6R7l_SOo4vpuhzjwKGQQ",
-      authDomain: "proposal-scout.firebaseapp.com",
-      projectId: "proposal-scout",
-      storageBucket: "proposal-scout.appspot.com",
-      messagingSenderId: "561559952969",
-      appId: "1:561559952969:web:09dce9fdf59c2dca146998",
-      measurementId: "G-V3607WBKEX",
-    };
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
-
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, username, password);
-      set(databaseRef(db, `users/${userCredential.user.uid}`), {
-        name,
-        username,
-        status: "pending",
-      })
-        .then(() => {
-          console.log("User data successfully saved");
-          window.location.href = "/";
-        })
-        .catch((error) => {
-          console.log("error: " + error);
-        });
+      console.log("saving the data sir!!!");
+
+      const response = await fetch("/api/insertData", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({ id: `${userCredential.user.uid}`, name, username, status: "pending", filename: null, file: null, time: null }), // Send data in the request body
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to insert data");
+      } else {
+        const data = await response.json();
+        console.log(data);
+        window.location.href = "/";
+      }
     } catch (error) {
-      console.log(error);
+      console.error("Error inserting data:", error);
       showLoginError(error);
     }
   };

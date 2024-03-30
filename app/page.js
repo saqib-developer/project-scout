@@ -5,7 +5,6 @@ import styles from "./page.module.css";
 import { useEffect, useState, useRef } from "react";
 import { initializeApp } from "firebase/app";
 import { onAuthStateChanged, getAuth, signOut } from "firebase/auth";
-import { getDatabase, ref as databaseRef, get, set } from "firebase/database";
 import { getStorage, ref as storageRef, getMetadata, getDownloadURL, listAll, uploadBytesResumable, deleteObject } from "firebase/storage";
 import Admin from "./Admin";
 
@@ -23,7 +22,6 @@ export default function Home() {
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
-  const db = getDatabase(app);
   const storage = getStorage(app);
 
   const [loggedin, setLoggedin] = useState(false);
@@ -34,7 +32,7 @@ export default function Home() {
   const [submittedOn, setSubmittedOn] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [progress, setProgress] = useState(0);
-  const [fileName, setFileName] = useState(null);
+  const [filename, setFilename] = useState(null);
 
   const uploader = useRef(null);
   const progresser = useRef(null);
@@ -85,17 +83,39 @@ export default function Home() {
         await uploadTask;
 
         const downloadURL = await getDownloadURL(storageRefObj);
-        const snapshot = await get(databaseRef(db, "users/" + userUid));
-        const { name, username } = snapshot.val();
 
-        await set(databaseRef(db, `users/${userUid}`), {
-          name: name,
-          username: username,
-          fileName: selectedFile.name,
-          file: downloadURL,
-          status: "submitted",
-          time: Date.now(),
+        const getresponse = await fetch(`/api/singleUser?id=${userUid}`);
+
+        if (!getresponse.ok) {
+          throw new Error("Failed to fetch data");
+        }
+
+        // Parse the getresponse body as JSON
+        const data = await getresponse.json();
+        const { name, username } = data.data[0];
+
+        const response = await fetch("/api/insertData", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id: userUid,
+            name: name,
+            username: username,
+            status: "submitted",
+            filename: selectedFile.name,
+            file: downloadURL,
+            time: Date.now(),
+          }), // Send data in the request body
         });
+
+        if (!response.ok) {
+          throw new Error("Failed to insert data");
+        } else {
+          const data = await response.json(); // Parse the response body as JSON
+          console.log(data); // Log the response data
+        }
 
         console.log("File uploaded successfully");
         window.location.href = "/";
@@ -159,18 +179,24 @@ export default function Home() {
           console.error(error);
         });
 
-      get(databaseRef(db, "users/" + userUid))
-        .then((snapshot) => {
-          setName(snapshot.val().name);
-          setUsername(snapshot.val().username);
+      const getdata = async () => {
+        const getresponse = await fetch(`/api/singleUser?id=${userUid}`);
 
-          setStatus(snapshot.val().status);
-          setSubmittedOn(snapshot.val().time);
-          setFileName(snapshot.val().fileName);
-        })
-        .catch((error) => {
-          console.error("Error fetching data from Firebase Realtime Database:", error);
-        });
+        if (!getresponse.ok) {
+          throw new Error("Failed to fetch data");
+        }
+
+        // Parse the getresponse body as JSON
+        const data = await getresponse.json();
+
+        setName(data.data[0].name);
+        setUsername(data.data[0].username);
+
+        setStatus(data.data[0].status);
+        setSubmittedOn(data.data[0].time);
+        setFilename(data.data[0].filename);
+      };
+      getdata();
     }
   }, [loggedin, userUid]);
 
@@ -180,20 +206,40 @@ export default function Home() {
 
   const deleteFile = async () => {
     try {
-      const userRef = databaseRef(db, `users/${userUid}`);
-      get(userRef)
-        .then((snapshot) => {
-          set(userRef, {
-            name: snapshot.val().name,
-            username: snapshot.val().username,
-            status: "pending",
-          });
-        })
-        .catch((error) => {
-          console.error("Error fetching data from Firebase Realtime Database:", error);
-        });
+      const getresponse = await fetch(`/api/singleUser?id=${userUid}`);
 
-      await deleteObject(storageRef(storage, `Projects Proposals/${userUid}/${fileName}`));
+      if (!getresponse.ok) {
+        throw new Error("Failed to fetch data");
+      }
+
+      // Parse the getresponse body as JSON
+      const data = await getresponse.json();
+      const { name, username } = data.data[0];
+
+      const response = await fetch("/api/insertData", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: userUid,
+          name: name,
+          username: username,
+          status: "pending",
+          filename: null,
+          file: null,
+          time: null,
+        }), // Send data in the request body
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to insert data");
+      } else {
+        const data = await response.json(); // Parse the response body as JSON
+        console.log(data); // Log the response data
+      }
+
+      await deleteObject(storageRef(storage, `Projects Proposals/${userUid}/${filename}`));
 
       console.log("File deleted and status updated successfully");
       window.location.href = "/";
