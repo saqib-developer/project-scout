@@ -182,9 +182,8 @@ export default function Home() {
       const getdata = async () => {
         const getresponse = await fetch(`/api/singleUser?id=${userUid}`);
 
-        console.log(getresponse)
         if (!getresponse.ok) {
-          console.error("Failed to fetch data");
+          throw new Error("Failed to fetch data");
         }
 
         // Parse the getresponse body as JSON
@@ -304,43 +303,39 @@ export default function Home() {
                       <p>{Math.floor(progress)}%</p>
                     </div>
                   </>
-                ) : (
-                  <div className={styles.fileContainer}>
-                    {retriveFilesInfo.length !== 0
-                      ? retriveFilesInfo.map((fileInfo, index) => (
-                          <>
-                            <div className={styles.fileDetail}>
-                              <a key={index} href={fileInfo.url} download target="_blank" rel="noreferrer" className={styles.fileImgContainer}>
-                                {fileInfo.type.startsWith("image/") && <img width={225} height={225} src={fileInfo.url} alt="" />}
-                                {fileInfo.type === "application/pdf" && <Image width={225} height={225} src="/pdf.png" alt="" />}
-                                {fileInfo.type === "application/x-zip-compressed" && <Image width={225} height={225} src="/zip.png" alt="" />}
-                                {fileInfo.type === "application/vnd.openxmlformats-officedocument.presentationml.presentation" && (
-                                  <Image width={225} height={225} src="/pptx.png" alt="" />
-                                )}
-                                {fileInfo.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" && (
-                                  <Image width={225} height={225} src="/word.png" alt="" />
-                                )}
-                              </a>
-                              <div className={styles.fileData}>
-                                <p style={{ fontSize: "1.1em" }}>{fileInfo.name}</p>
-                                <p>Size: {Math.round((fileInfo.size / (1024 * 1024)) * 10) / 10} MB</p>
-                                <p>Status: {status}</p>
-                                <p>Submitted on: {new Date(submittedOn).toLocaleDateString("en-GB")}</p>
-                                <div className={styles.fileNavigation}>
-                                  <a key={index} href={fileInfo.url} download={`file_${index + 1}`} target="_blank" rel="noreferrer">
-                                    <span>View</span>
-                                  </a>
-                                  <button className={styles.btn} onClick={deleteFile}>
-                                    Delete
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          </>
-                        ))
-                      : null}
-                  </div>
-                )}
+                ) : retriveFilesInfo.length !== 0 ? (
+                  retriveFilesInfo.map((fileInfo, index) => (
+                    <div key={index} className={styles.fileContainer}>
+                      <div className={styles.fileDetail}>
+                        <a href={fileInfo.url} download target="_blank" rel="noreferrer" className={styles.fileImgContainer}>
+                          {fileInfo.type.startsWith("image/") && <img width={225} height={225} src={fileInfo.url} alt="" />}
+                          {fileInfo.type === "application/pdf" && <Image width={225} height={225} src="/pdf.png" alt="" />}
+                          {fileInfo.type === "application/x-zip-compressed" && <Image width={225} height={225} src="/zip.png" alt="" />}
+                          {fileInfo.type === "application/vnd.openxmlformats-officedocument.presentationml.presentation" && (
+                            <Image width={225} height={225} src="/pptx.png" alt="" />
+                          )}
+                          {fileInfo.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" && (
+                            <Image width={225} height={225} src="/word.png" alt="" />
+                          )}
+                        </a>
+                        <div className={styles.fileData}>
+                          <p style={{ fontSize: "1.1em" }}>{fileInfo.name}</p>
+                          <p>Size: {Math.round((fileInfo.size / (1024 * 1024)) * 10) / 10} MB</p>
+                          <p>Status: {status}</p>
+                          <p>Submitted on: {new Date(submittedOn).toLocaleDateString("en-GB")}</p>
+                          <div className={styles.fileNavigation}>
+                            <a key={index} href={fileInfo.url} download={`file_${index + 1}`} target="_blank" rel="noreferrer">
+                              <span>View</span>
+                            </a>
+                            <button className={styles.btn} onClick={deleteFile}>
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : null}
               </>
             )}
           </>
