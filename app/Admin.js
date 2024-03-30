@@ -1,21 +1,8 @@
 "use client";
-import { initializeApp } from "firebase/app";
 import React, { useState, useEffect } from "react";
 import styles from "./admin.module.css";
 
 export default function Admin() {
-  const firebaseConfig = {
-    apiKey: "AIzaSyAitg_ZCEIPOhb6R7l_SOo4vpuhzjwKGQQ",
-    authDomain: "proposal-scout.firebaseapp.com",
-    projectId: "proposal-scout",
-    storageBucket: "proposal-scout.appspot.com",
-    messagingSenderId: "561559952969",
-    appId: "1:561559952969:web:09dce9fdf59c2dca146998",
-    measurementId: "G-V3607WBKEX",
-  };
-
-  const app = initializeApp(firebaseConfig);
-
   const [projects, setProjects] = useState([]);
   useEffect(() => {
     const getData = async () => {

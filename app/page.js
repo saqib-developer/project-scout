@@ -182,8 +182,9 @@ export default function Home() {
       const getdata = async () => {
         const getresponse = await fetch(`/api/singleUser?id=${userUid}`);
 
+        console.log(getresponse)
         if (!getresponse.ok) {
-          throw new Error("Failed to fetch data");
+          console.error("Failed to fetch data");
         }
 
         // Parse the getresponse body as JSON
