@@ -1,9 +1,14 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styles from "./admin.module.css";
 
 export default function Admin() {
   const [projects, setProjects] = useState([]);
+  const [reason, setReason] = useState("");
+
+  const popup = useRef(null);
+  const reasonValue = useRef(null);
+
   useEffect(() => {
     const getData = async () => {
       const getresponse = await fetch(`/api/getAllUsers`);
@@ -19,7 +24,7 @@ export default function Admin() {
     getData();
   }, []);
 
-  const projectResult = (userid, result) => {
+  const projectResult = (userid, result, msg) => {
     try {
       document.getElementById(`fileNavigation-${userid}`).style.display = "none";
 
@@ -34,7 +39,7 @@ export default function Admin() {
             body: JSON.stringify({
               id: `${userid}`,
               name: value.name,
-              username: value.username,
+              email: value.email,
               status: result,
               filename: value.filename,
               file: value.file,
@@ -48,9 +53,9 @@ export default function Admin() {
             console.log(data);
           }
 
-          const userEmail = value.username;
+          const userEmail = value.email;
           const subject = `Project ${result}!`;
-          const message = `Your project has been ${result} by the Admin.`;
+          const message = `Your project has been ${result} by the Admin${msg}`;
 
           fetch("/api/send-email", {
             method: "POST",
@@ -86,12 +91,26 @@ export default function Admin() {
                   </div>
                 </a>
                 <div className={styles.fileNavigation} id={`fileNavigation-${value.id}`}>
-                  <button onClick={() => projectResult(value.id, "Accepted")} className={styles.secandary}>
+                  <button onClick={() => projectResult(value.id, "Accepted", " .")} className={styles.secandary}>
                     Accept
                   </button>
-                  <button onClick={() => projectResult(value.id, "Rejected")} className={styles.btn}>
+                  <button onClick={() => (popup.current.style.display = "flex")} className={styles.btn}>
                     Reject
                   </button>
+                </div>
+                <div ref={popup} className={styles.popup}>
+                  <div>
+                    <h3>Project Rejection Reason:</h3>
+                    <textarea ref={reasonValue} rows={13} cols={37} placeholder="your Project was Rejected because..." />
+                    <div className={styles.fileNavigation} id={`fileNavigation-${value.id}`}>
+                      <button onClick={() => (popup.current.style.display = "none")} className={styles.third}>
+                        Cancel
+                      </button>
+                      <button onClick={() => projectResult(value.id, "Rejected", ` because ${reasonValue.current.value}.`)} className={styles.btn}>
+                        Reject
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             ) : null

@@ -27,7 +27,7 @@ export default function Home() {
   const [loggedin, setLoggedin] = useState(false);
   const [userUid, setUserUid] = useState(null);
   const [name, setName] = useState(null);
-  const [username, setUsername] = useState(null);
+  const [email, setEmail] = useState(null);
   const [status, setStatus] = useState(null);
   const [submittedOn, setSubmittedOn] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -92,7 +92,7 @@ export default function Home() {
 
         // Parse the getresponse body as JSON
         const data = await getresponse.json();
-        const { name, username } = data.data[0];
+        const { name, email } = data.data[0];
 
         const response = await fetch("/api/insertData", {
           method: "POST",
@@ -102,7 +102,7 @@ export default function Home() {
           body: JSON.stringify({
             id: userUid,
             name: name,
-            username: username,
+            email: email,
             status: "submitted",
             filename: selectedFile.name,
             file: downloadURL,
@@ -135,7 +135,7 @@ export default function Home() {
       } else {
         setUserUid(null);
         setName(null);
-        setUsername(null);
+        setEmail(null);
         setStatus(null);
         setLoggedin(false);
 
@@ -190,7 +190,7 @@ export default function Home() {
         const data = await getresponse.json();
 
         setName(data.data[0].name);
-        setUsername(data.data[0].username);
+        setEmail(data.data[0].email);
 
         setStatus(data.data[0].status);
         setSubmittedOn(data.data[0].time);
@@ -214,7 +214,7 @@ export default function Home() {
 
       // Parse the getresponse body as JSON
       const data = await getresponse.json();
-      const { name, username } = data.data[0];
+      const { name, email } = data.data[0];
 
       const response = await fetch("/api/insertData", {
         method: "POST",
@@ -224,7 +224,7 @@ export default function Home() {
         body: JSON.stringify({
           id: userUid,
           name: name,
-          username: username,
+          email: email,
           status: "pending",
           filename: null,
           file: null,
@@ -280,7 +280,7 @@ export default function Home() {
       <main className={styles.main}>
         {loggedin ? (
           <>
-            {username === "admin@gmail.com" ? (
+            {email === "msaadraza1590@gmail.com" ? (
               <Admin />
             ) : (
               <>

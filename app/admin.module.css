@@ -48,3 +48,39 @@
   cursor: pointer;
   margin-right: 18px;
 }
+
+.popup {
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgb(0 0 0 / 28%);
+  align-items: center;
+  justify-content: center;
+  top: 0px;
+  left: 0px;
+  display: none;
+}
+
+.popup div {
+  background-color: white;
+  padding: 10px;
+  border-radius: 10px;
+  box-shadow: 0 0 7px #0000006b;
+}
+
+.popup div textarea {
+  /* width: 280px;
+  height: 65px; */
+  resize: none;
+}
+
+.third {
+  background-color: rgba(128, 128, 128, 0.432);
+  border: 2px solid gray;
+  border-radius: 8px;
+  padding: 6px 13px;
+  color: black;
+  font-size: 1.01em;
+  cursor: pointer;
+  margin-right: 18px;
+}

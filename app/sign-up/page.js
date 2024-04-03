@@ -8,7 +8,7 @@ import { getAuth, createUserWithEmailAndPassword, AuthErrorCodes } from "firebas
 
 export default function Signup() {
   const [name, setName] = useState();
-  const [username, setUsername] = useState();
+  const [email, setEmail] = useState();
   const [password, setPassword] = useState();
 
   const firebaseConfig = {
@@ -27,7 +27,7 @@ export default function Signup() {
     event.preventDefault();
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, username, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       console.log("saving the data sir!!!");
 
       const response = await fetch("/api/insertData", {
@@ -36,7 +36,7 @@ export default function Signup() {
           "Content-Type": "application/json",
         },
 
-        body: JSON.stringify({ id: `${userCredential.user.uid}`, name, username, status: "pending", filename: null, file: null, time: null }), // Send data in the request body
+        body: JSON.stringify({ id: `${userCredential.user.uid}`, name, email, status: "pending", filename: null, file: null, time: null }),
       });
 
       if (!response.ok) {
@@ -82,15 +82,8 @@ export default function Signup() {
             <input value={name} onChange={(event) => setName(event.target.value)} required id="name" type="text" placeholder="Name" />
           </div>
           <div className={styles.inputContainer}>
-            <label htmlFor="username">Username*</label>
-            <input
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              required
-              id="username"
-              type="email"
-              placeholder="Username"
-            />
+            <label htmlFor="email">Email*</label>
+            <input value={email} onChange={(event) => setEmail(event.target.value)} required id="email" type="email" placeholder="Email" />
           </div>
           <div className={styles.inputContainer}>
             <label htmlFor="password">Password*</label>

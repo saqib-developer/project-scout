@@ -7,7 +7,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword, AuthErrorCodes } from "firebase/auth";
 
 export default function Login() {
-  const [username, setUsername] = useState();
+  const [email, setEmail] = useState();
   const [password, setPassword] = useState();
 
   const login = async (event) => {
@@ -26,7 +26,7 @@ export default function Login() {
     const auth = getAuth(app);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, username, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log(userCredential.user);
       window.location.href = "/";
     } catch (error) {
@@ -61,16 +61,16 @@ export default function Login() {
         <form onSubmit={login}>
           <Image className={styles.userProfileImg} src={"/profile-img-2.jpg"} alt="" width={100} height={100} />
           <div className={styles.inputContainer}>
-            <label htmlFor="username">
+            <label htmlFor="email">
               <Image src={"/profile-img-3.png"} alt="" width={20} height={20} />
             </label>
             <input
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
               required
-              id="username"
+              id="email"
               type="email"
-              placeholder="Username"
+              placeholder="email"
             />
           </div>
           <div className={styles.inputContainer}>

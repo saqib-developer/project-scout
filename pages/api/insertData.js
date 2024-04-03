@@ -10,21 +10,21 @@ const pool = new Pool({
 export default async function handler(req, res) {
   if (req.method === "POST") {
     try {
-      const { id, name, username, status, filename, file, time } = req.body;
+      const { id, name, email, status, filename, file, time } = req.body;
 
       const queryText =`
-      INSERT INTO users (id, name, username, status, filename, file, time)
+      INSERT INTO users (id, name, email, status, filename, file, time)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       ON CONFLICT (id)
       DO UPDATE SET
         name = $2,
-        username = $3,
+        email = $3,
         status = $4,
         filename = $5,
         file = $6,
         time = $7
       RETURNING *`;
-      const queryParams = [id, name, username, status, filename, file, time];
+      const queryParams = [id, name, email, status, filename, file, time];
       const result = await pool.query(queryText, queryParams);
 
       // Respond with the inserted data
