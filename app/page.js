@@ -268,10 +268,10 @@ export default function Home() {
           ) : (
             <ul className={styles.ul}>
               <li className={styles.li}>
-                <Link href="/sign-up">sign up</Link>
+                <Link href="/sign-up">Sign up</Link>
               </li>
               <li className={styles.li}>
-                <Link href="/log-in">log in</Link>
+                <Link href="/log-in">Log in</Link>
               </li>
             </ul>
           )}
@@ -290,10 +290,10 @@ export default function Home() {
                       <Image className={styles.img} src={"/cloud-upload-img.png"} alt="Cloud Upload Image" width={150} height={150} />
                       <p>Drag & Drop to Upload File</p>
                       <p>OR</p>
-                      <label htmlFor="file-upload" className="custom-file-upload">
+                      <label htmlFor="file-upload" className={styles.customFileUpload}>
                         Choose File
                       </label>
-                      <input id="file-upload" className="input-file" type="file" onChange={handleFileChange} />
+                      <input id="file-upload" className={styles.inputFile} type="file" onChange={handleFileChange} />
                     </div>
                     <div ref={progresser} className={styles.progressBarContainer}>
                       <Image className={styles.img} src={"/uploading.jpg"} alt="Project Scout Logo" width={250} height={250} />
@@ -307,6 +307,9 @@ export default function Home() {
                   retriveFilesInfo.map((fileInfo, index) => (
                     <div key={index} className={styles.fileContainer}>
                       <div className={styles.fileDetail}>
+                        <p className={styles.status} style={{ color: status === "Accepted" ? "green" : status === "Rejected" ? "red" : "orange" }}>
+                          {status}
+                        </p>
                         <a href={fileInfo.url} download target="_blank" rel="noreferrer" className={styles.fileImgContainer}>
                           {fileInfo.type.startsWith("image/") && <img width={225} height={225} src={fileInfo.url} alt="" />}
                           {fileInfo.type === "application/pdf" && <Image width={225} height={225} src="/pdf.png" alt="" />}
@@ -319,9 +322,8 @@ export default function Home() {
                           )}
                         </a>
                         <div className={styles.fileData}>
-                          <p style={{ fontSize: "1.1em" }}>{fileInfo.name}</p>
+                          <p className={styles.fileName}>{fileInfo.name}</p>
                           <p>Size: {Math.round((fileInfo.size / (1024 * 1024)) * 10) / 10} MB</p>
-                          <p>Status: {status}</p>
                           <p>Submitted on: {new Date(submittedOn).toLocaleDateString("en-GB")}</p>
                           <div className={styles.fileNavigation}>
                             <a key={index} href={fileInfo.url} download={`file_${index + 1}`} target="_blank" rel="noreferrer">
@@ -341,8 +343,22 @@ export default function Home() {
           </>
         ) : (
           <>
-            <Image className={styles.img} src={"/not-logged-in.png"} alt="" width={400} height={400} />
-            <p style={{ fontSize: "1.3em", color: "gray" }}>Login to view you Data</p>
+            <Image style={{ width: "90%", height: "auto" }} src={"/background.png"} alt="" width={400} height={400} />
+            <div className={styles.contentContainer}>
+              <div className={styles.loginContainer}>
+                <Image className={styles.notLoggedInImage} src="/not-logged-in.png" alt="Not logged in" width={400} height={400} />
+                <p className={styles.notLoggedInText}>Login to view your data</p>
+              </div>
+              <div className={styles.descriptionContainer}>
+                <p className={styles.descriptionText}>
+                  This website is a comprehensive platform designed to streamline the project proposal process for students and administrators.
+                  Students can create new accounts and submit their project proposals in various formats, ensuring flexibility and ease of use.
+                  Administrators have the ability to review these submissions, approve or reject them based on specific criteria. Upon approval or
+                  rejection, the respective student receives an email notification with the decision, ensuring timely and efficient communication.
+                  This platform enhances the project submission workflow, providing a seamless experience for both students and administrators.
+                </p>
+              </div>
+            </div>
           </>
         )}
       </main>

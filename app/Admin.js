@@ -75,6 +75,16 @@ export default function Admin() {
     }
   };
 
+  let showNoProject = true;
+  const noProject = () => {
+    const hasSubmittedProjects = projects.some((value) => value.status === "submitted");
+    if (!hasSubmittedProjects && showNoProject) {
+      showNoProject = false;
+      return <p>No Project Proposals Submitted</p>;
+    }
+    return null;
+  };
+
   return (
     <div>
       <h1>Project Proposals</h1>
@@ -113,10 +123,12 @@ export default function Admin() {
                   </div>
                 </div>
               </div>
-            ) : null
+            ) : (
+              noProject()
+            )
           )
         ) : (
-          <p>No Project Proposals to Show</p>
+          <p>Loading...</p>
         )}
       </div>
     </div>
