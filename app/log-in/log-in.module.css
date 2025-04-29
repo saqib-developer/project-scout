@@ -108,3 +108,10 @@
 .formContainer p a:hover {
   text-decoration: underline;
 }
+.errorInput {
+  border: 1.5px solid red;
+}
+.errorMessage {
+  color: red;
+  margin: 0.5rem 0;
+}
