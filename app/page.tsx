@@ -4,12 +4,14 @@ import React, { useState, useEffect, useRef, ChangeEvent, DragEvent } from "reac
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
 import styles from "./page.module.css";
 
-import { onAuthStateChanged, signOut } from "firebase/auth";
-import { getStorage, ref as storageRef, getMetadata, getDownloadURL, listAll, uploadBytesResumable, deleteObject } from "firebase/storage";
-import { ref as dbRef, onValue, set, update } from "firebase/database";
-import { auth, db, storage } from "../firebase/config"; // adjust path if needed
+import { onAuthStateChanged, signOut, User as FirebaseUser } from "firebase/auth";
+import { ref as storageRef, getMetadata, getDownloadURL, listAll, uploadBytesResumable, deleteObject } from "firebase/storage";
+import { ref as dbRef, onValue, update } from "firebase/database";
+
+import { auth, db, storage } from "../firebase/config";
 import Admin from "./Admin";
 
 interface FileInfo {
@@ -22,250 +24,246 @@ interface FileInfo {
 export default function Home() {
   const router = useRouter();
 
-  // Auth & user state
-  const [loggedIn, setLoggedIn] = useState<boolean>(false);
-  const [userUid, setUserUid] = useState<string | null>(null);
-  const [name, setName] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
-  const [status, setStatus] = useState<string>("pending");
-  const [submittedOn, setSubmittedOn] = useState<number | null>(null);
-  const [filename, setFilename] = useState<string | null>(null);
+  // ─── Auth State ───────────────────────────────────────────────────────────────
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+  useEffect(() => onAuthStateChanged(auth, setUser), []);
 
-  // File upload state
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [progress, setProgress] = useState<number>(0);
-  const [fileInfos, setFileInfos] = useState<FileInfo[]>([]);
+  // ─── Profile State ────────────────────────────────────────────────────────────
+  const uid = user?.uid ?? null;
+  const [profile, setProfile] = useState<{
+    name: string;
+    email: string;
+    status: string;
+    submittedOn: number | null;
+    // fields added by admin:
+    responseMsg?: string;
+    responseFileURL?: string;
+    responseFilename?: string;
+    // original student file:
+    filename: string | null;
+  }>({
+    name: "",
+    email: "",
+    status: "pending",
+    submittedOn: null,
+    filename: null,
+  });
 
-  const uploaderRef = useRef<HTMLDivElement>(null);
-  const progresserRef = useRef<HTMLDivElement>(null);
-
-  // Monitor auth state
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUserUid(user.uid);
-        setLoggedIn(true);
-      } else {
-        setUserUid(null);
-        setLoggedIn(false);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // Fetch user profile from DB
-  useEffect(() => {
-    if (!loggedIn || !userUid) return;
-    const userRef = dbRef(db, `users/${userUid}`);
-    const unsubscribe = onValue(userRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        setName(data.name || "");
-        setEmail(data.email || "");
-        setStatus(data.status || "pending");
-        setSubmittedOn(data.time || null);
-        setFilename(data.filename || null);
-      }
-    });
-    return () => unsubscribe();
-  }, [loggedIn, userUid]);
-
-  // List files in Storage
-  useEffect(() => {
-    if (!loggedIn || !userUid) return;
-    const listRef = storageRef(storage, `Projects Proposals/${userUid}/`);
-    listAll(listRef)
-      .then((res) => {
-        return Promise.all(
-          res.items.map(async (itemRef) => {
-            const url = await getDownloadURL(itemRef);
-            const metadata = await getMetadata(itemRef);
-            return {
-              name: metadata.name,
-              type: metadata.contentType || "",
-              size: metadata.size,
-              url,
-            } as FileInfo;
-          })
-        );
-      })
-      .then((infos) => setFileInfos(infos))
-      .catch((err) => console.error("Error listing files:", err));
-  }, [loggedIn, userUid, status]);
-
-  // Handle file selection
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      setSelectedFile(e.target.files[0]);
-    }
-  };
-  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    if (e.dataTransfer.files?.[0]) {
-      setSelectedFile(e.dataTransfer.files[0]);
-    }
-  };
-  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-  };
-
-  // Upload file effect
-  useEffect(() => {
-    if (!selectedFile || !userUid) return;
-    const upload = async () => {
-      const path = `Projects Proposals/${userUid}/${selectedFile.name}`;
-      const storageReference = storageRef(storage, path);
-      const uploadTask = uploadBytesResumable(storageReference, selectedFile, { contentType: selectedFile.type });
-
-      uploaderRef.current?.classList.add(styles.hidden);
-      progresserRef.current?.classList.remove(styles.hidden);
-
-      uploadTask.on(
-        "state_changed",
-        (snapshot) => {
-          const pct = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setProgress(pct);
-        },
-        (err) => console.error("Upload error:", err),
-        async () => {
-          // Complete
-          const downloadURL = await getDownloadURL(storageReference);
-          // Update DB
-          await update(dbRef(db, `users/${userUid}`), {
-            status: "submitted",
-            filename: selectedFile.name,
-            file: downloadURL,
-            time: Date.now(),
-          });
-          // Refresh UI
-          setSelectedFile(null);
-          setProgress(0);
-          router.refresh();
-        }
-      );
-    };
-    upload();
-  }, [selectedFile, userUid, router]);
-
-  // Delete file
-  const deleteFile = async () => {
-    if (!userUid || !filename) return;
-    try {
-      // Delete from storage
-      await deleteObject(storageRef(storage, `Projects Proposals/${userUid}/${filename}`));
-      // Reset DB
-      await update(dbRef(db, `users/${userUid}`), {
-        status: "pending",
-        filename: null,
-        file: null,
-        time: null,
+    if (!uid) return;
+    const unsub = onValue(dbRef(db, `users/${uid}`), (snap) => {
+      const d = snap.val() ?? {};
+      setProfile({
+        name: d.name || "",
+        email: d.email || "",
+        status: d.status || "pending",
+        submittedOn: d.time || null,
+        filename: d.filename || null,
+        responseMsg: d.responseMsg || "",
+        responseFileURL: d.responseFileURL || "",
+        responseFilename: d.responseFilename || "",
       });
-      router.refresh();
-    } catch (err) {
-      console.error("Delete error:", err);
+    });
+    return unsub;
+  }, [uid]);
+
+  // ─── File Listing ─────────────────────────────────────────────────────────────
+  const [files, setFiles] = useState<FileInfo[]>([]);
+  useEffect(() => {
+    if (!uid) return;
+    const folder = `Projects Proposals/${uid}/`;
+    const listRef = storageRef(storage, folder);
+    listAll(listRef)
+      .then((res) =>
+        Promise.all(
+          res.items.map(async (item) => {
+            const url = await getDownloadURL(item);
+            const meta = await getMetadata(item);
+            return { name: meta.name, type: meta.contentType ?? "", size: meta.size, url } as FileInfo;
+          })
+        )
+      )
+      .then(setFiles)
+      .catch(console.error);
+  }, [uid, profile.status]);
+
+  // ─── File Upload ──────────────────────────────────────────────────────────────
+  const [selFile, setSelFile] = useState<File | null>(null);
+  const [progress, setProgress] = useState(0);
+  const upRef = useRef<HTMLDivElement>(null);
+  const prRef = useRef<HTMLDivElement>(null);
+
+  const pickFile = (f: File) => setSelFile(f);
+  const onChangeFile = (e: ChangeEvent<HTMLInputElement>) => e.target.files?.[0] && pickFile(e.target.files[0]);
+  const onDropFile = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.dataTransfer.files[0] && pickFile(e.dataTransfer.files[0]);
+  };
+  const onDragOverFile = (e: DragEvent<HTMLDivElement>) => e.preventDefault();
+
+  useEffect(() => {
+    if (!selFile || !uid) return;
+    const path = `Projects Proposals/${uid}/${selFile.name}`;
+    const refSt = storageRef(storage, path);
+    const task = uploadBytesResumable(refSt, selFile, { contentType: selFile.type });
+
+    upRef.current?.classList.add(styles.hidden);
+    prRef.current?.classList.remove(styles.hidden);
+
+    task.on(
+      "state_changed",
+      (snap) => setProgress((snap.bytesTransferred / snap.totalBytes) * 100),
+      console.error,
+      async () => {
+        const url = await getDownloadURL(refSt);
+        await update(dbRef(db, `users/${uid}`), {
+          status: "submitted",
+          filename: selFile.name,
+          file: url,
+          time: Date.now(),
+        });
+        setSelFile(null);
+        setProgress(0);
+        router.refresh();
+      }
+    );
+  }, [selFile, uid, router]);
+
+  // ─── File Delete (with response cleanup) ────────────────────────────────────
+  const deleteFile = async () => {
+    if (!uid) return;
+
+    // 1) Delete student’s original file
+    if (profile.filename) {
+      await deleteObject(storageRef(storage, `Projects Proposals/${uid}/${profile.filename}`));
     }
+
+    // 2) If admin uploaded a response file, delete that too
+    if (profile.responseFilename) {
+      await deleteObject(storageRef(storage, `responses/${uid}/${profile.responseFilename}`));
+    }
+
+    // 3) Clear all related fields in Realtime Database
+    await update(dbRef(db, `users/${uid}`), {
+      status: "pending",
+      filename: null,
+      file: null,
+      time: null,
+      responseMsg: null,
+      responseFileURL: null,
+      responseFilename: null,
+    });
+
+    // 4) Refresh UI
+    router.refresh();
   };
 
+  // ─── Logout ───────────────────────────────────────────────────────────────────
   const logout = async () => {
     await signOut(auth);
+    router.push("/log-in");
   };
+
+  // ─── Render ──────────────────────────────────────────────────────────────────
+  if (!user) {
+    return (
+      <div className={styles.centered}>
+        <Image src="/not-logged-in.png" alt="Login required" width={240} height={240} />
+        <p>
+          Please <Link href="/log-in">Log in</Link>.
+        </p>
+      </div>
+    );
+  }
+
+  if (profile.email === "muhammadsaqib8379@gmail.com") {
+    return <Admin />;
+  }
 
   return (
     <>
       <header className={styles.header}>
-        <Link href="/" className={styles.logoContainer}>
+        <Link href="/" className={styles.logo}>
           <Image src="/logo.png" alt="Logo" width={50} height={50} />
         </Link>
-        <nav className={styles.navigationBar}>
-          {loggedIn ? (
-            <>
-              <button className={styles.btn} onClick={logout}>
-                Sign out
-              </button>
-              <div className={styles.nameContainer}>
-                <Image src="/profile-img-3.jpg" alt="Avatar" width={50} height={50} />
-                <p>{name}</p>
-              </div>
-            </>
-          ) : (
-            <ul className={styles.ul}>
-              <li className={styles.li}>
-                <Link href="/sign-up">Sign up</Link>
-              </li>
-              <li className={styles.li}>
-                <Link href="/log-in">Log in</Link>
-              </li>
-            </ul>
-          )}
-        </nav>
+        <div className={styles.navRight}>
+          <span className={styles.welcome}>Welcome, {profile.name}</span>
+          <button onClick={logout} className={styles.logout}>
+            Sign out
+          </button>
+        </div>
       </header>
 
       <main className={styles.main}>
-        {loggedIn ? (
-          email === "muhammadsaqib8379@gmail.com" ? (
-            <Admin />
-          ) : status === "pending" ? (
-            <>
-              <div ref={uploaderRef} className={styles.container} onDrop={handleDrop} onDragOver={handleDragOver}>
-                <Image src="/cloud-upload-img.png" alt="Upload" width={150} height={150} />
-                <p>Drag & Drop to Upload File</p>
-                <p>OR</p>
-                <label htmlFor="file-upload" className={styles.customFileUpload}>
-                  Choose File
-                </label>
-                <input id="file-upload" type="file" className={styles.inputFile} onChange={handleFileChange} />
-              </div>
-              <div ref={progresserRef} className={`${styles.progressBarContainer} ${styles.hidden}`}>
-                <Image src="/uploading.jpg" alt="Uploading" width={250} height={250} />
-                <div className={styles.progressBar}>
-                  <div style={{ width: `${progress}%` }}></div>
-                </div>
-                <p>{Math.floor(progress)}%</p>
-              </div>
-            </>
-          ) : fileInfos.length > 0 ? (
-            fileInfos.map((fileInfo, idx) => (
-              <div key={idx} className={styles.fileContainer}>
-                <div className={styles.fileDetail}>
-                  <p className={styles.status} style={{ color: status === "Accepted" ? "green" : status === "Rejected" ? "red" : "orange" }}>
-                    {status}
-                  </p>
-                  <a href={fileInfo.url} download target="_blank" rel="noreferrer" className={styles.fileImgContainer}>
-                    {fileInfo.type.startsWith("image/") && <img width={225} height={225} src={fileInfo.url} alt="" />}
-                    {fileInfo.type === "application/pdf" && <Image src="/pdf.png" alt="PDF" width={225} height={225} />}
-                    {fileInfo.type === "application/zip" && <Image src="/zip.png" alt="ZIP" width={225} height={225} />}
-                  </a>
-                  <div className={styles.fileData}>
-                    <p className={styles.fileName}>{fileInfo.name}</p>
-                    <p>Size: {Math.round((fileInfo.size / (1024 * 1024)) * 10) / 10} MB</p>
-                    <p>Submitted on: {submittedOn ? new Date(submittedOn).toLocaleDateString("en-GB") : ""}</p>
-                    <div className={styles.fileNavigation}>
-                      <a href={fileInfo.url} download={`file_${idx + 1}`} target="_blank" rel="noreferrer">
-                        <span>View</span>
-                      </a>
-                      <button className={styles.btn} onClick={deleteFile}>
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : null
+        {profile.status === "pending" ? (
+          <div ref={upRef} className={styles.uploader} onDrop={onDropFile} onDragOver={onDragOverFile}>
+            <Image src="/cloud-upload-img.png" alt="Upload" width={100} height={100} />
+            <p>Drag & drop your file here</p>
+            <label htmlFor="file-upload" className={styles.uploadLabel}>
+              Or select file
+            </label>
+            <input id="file-upload" type="file" className={styles.fileInput} onChange={onChangeFile} />
+          </div>
         ) : (
           <>
-            <Image src="/background.png" alt="Welcome" width={400} height={400} style={{ width: "70%", height: "auto" }} />
-            <div className={styles.contentContainer}>
-              <div className={styles.loginContainer}>
-                <Image src="/not-logged-in.png" alt="Not logged in" width={400} height={400} className={styles.notLoggedInImage} />
-                <p className={styles.notLoggedInText}>Login to view your data</p>
+            {/* Show Admin Response Message */}
+            {profile.responseMsg && (
+              <div className={styles.responseBox}>
+                <h2 className={styles.responseTitle}>{profile.status.toUpperCase()}</h2>
+                <p className={styles.responseText}>{profile.responseMsg}</p>
               </div>
-              <div className={styles.descriptionContainer}>
-                <p className={styles.descriptionText}>This platform allows students to submit project proposals and administrators to review them.</p>
-              </div>
-            </div>
+            )}
+
+            {/* Display Admin’s Updated File if exists */}
+            <section className={styles.gallery}>
+              {(profile.responseFileURL
+                ? [
+                    {
+                      name: profile.responseFilename!,
+                      url: profile.responseFileURL,
+                      type: "",
+                      size: 0,
+                    },
+                  ]
+                : files
+              ).map((f, i) => (
+                <div key={i} className={styles.card}>
+                  <a href={f.url} download target="_blank" rel="noreferrer" className={styles.fileImgContainer}>
+                    {/* IMAGE PREVIEW */}
+                    {(f.type.startsWith("image/") || /\.(jpe?g|png|gif|webp)$/i.test(f.name)) && <img src={f.url} alt={f.name} width={225} height={225} className={styles.filePreview} />}
+
+                    {/* PDF ICON */}
+                    {f.type === "application/pdf" && <Image src="/pdf.png" alt="PDF" width={225} height={225} className={styles.filePreview} />}
+
+                    {/* ZIP ICON */}
+                    {f.type === "application/zip" && <Image src="/zip.png" alt="ZIP" width={225} height={225} className={styles.filePreview} />}
+
+                    {/* PPTX ICON */}
+                    {/\.(pptx?)$/i.test(f.name) && <Image src="/pptx.png" alt="PowerPoint" width={225} height={225} className={styles.filePreview} />}
+
+                    {/* DOCX ICON */}
+                    {/\.(docx?)$/i.test(f.name) && <Image src="/word.png" alt="Word" width={225} height={225} className={styles.filePreview} />}
+                  </a>
+
+                  <div className={styles.details}>
+                    <strong className={styles.filename}>{f.name}</strong>
+                    {f.size > 0 && <small className={styles.filesize}>{Math.round((f.size / 1024 / 1024) * 10) / 10} MB</small>}
+                    <button onClick={deleteFile} className={styles.delete}>
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </section>
           </>
         )}
+
+        <div ref={prRef} className={`${styles.progress} ${styles.hidden}`}>
+          <div className={styles.bar}>
+            <div className={styles.filled} style={{ width: `${progress}%` }} />
+          </div>
+          <span>{Math.round(progress)}%</span>
+        </div>
       </main>
     </>
   );

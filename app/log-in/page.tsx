@@ -1,4 +1,3 @@
-// app/log-in/page.tsx   (or wherever your component lives)
 "use client";
 
 import React, { useState, FormEvent } from "react";
@@ -7,28 +6,27 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 import styles from "./log-in.module.css";
-
 import { signInWithEmailAndPassword, AuthErrorCodes } from "firebase/auth";
-import { auth } from "../../firebase/config"; // Adjusted the path to match the relative structure.
+import { auth, db, storage } from "../../firebase/config";
 
-const Login: React.FC = () => {
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [error, setError] = useState<string>("");
-
+export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const router = useRouter();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError(""); // reset
+    setError("");
 
     try {
-      const cred = await signInWithEmailAndPassword(auth, email, password);
-      console.log("Logged in user:", cred.user);
-      router.push("/"); // navigate home
+      await signInWithEmailAndPassword(auth, email, password);
+      router.push("/");
     } catch (err: any) {
       if (err.code === AuthErrorCodes.INVALID_PASSWORD) {
         setError("Wrong password. Try again.");
+      } else if (err.code === AuthErrorCodes.USER_DELETED) {
+        setError("No account found with this email.");
       } else {
         setError(err.message);
       }
@@ -36,30 +34,26 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className={styles.loginContainer}>
-      <div className={styles.img}>
-        <Image src="/background-nature.jpg" alt="background" fill style={{ objectFit: "cover" }} />
-      </div>
+    <div className={styles.page}>
+      <aside className={styles.imagePanel}>
+        <Image src="/background-nature.jpg" alt="Login background" fill className={styles.bgImage} />
+      </aside>
 
-      <div className={styles.formContainer}>
-        <Link href="/" className={styles.logoImg}>
-          <Image src="/logo.png" alt="Project Scout Logo" width={50} height={50} />
+      <main className={styles.mainPanel}>
+        <Link href="/" className={styles.logoLink}>
+          <Image src="/logo.png" alt="Logo" width={60} height={60} />
         </Link>
 
         <form onSubmit={handleSubmit} className={styles.form}>
-          <Image className={styles.userProfileImg} src="/profile-img-2.jpg" alt="User avatar" width={100} height={100} />
+          <Image src="/profile-img-2.jpg" alt="Avatar" width={80} height={80} className={styles.avatar} />
 
-          <div className={styles.inputContainer}>
-            <label htmlFor="email">
-              <Image src="/profile-img-3.png" alt="email icon" width={20} height={20} />
-            </label>
-            <input id="email" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <div className={styles.inputGroup}>
+            
+            <input id="email" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required className={styles.input} />
           </div>
 
-          <div className={styles.inputContainer}>
-            <label htmlFor="password">
-              <Image src="/lock.png" alt="lock icon" width={20} height={20} />
-            </label>
+          <div className={styles.inputGroup}>
+            
             <input
               id="password"
               type="password"
@@ -68,23 +62,24 @@ const Login: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
-              className={error ? styles.errorInput : ""}
+              className={`${styles.input} ${error ? styles.errorInput : ""}`}
             />
           </div>
 
           {error && <p className={styles.errorMessage}>{error}</p>}
 
-          <button type="submit" className={styles.loginButton}>
-            LOGIN
+          <button type="submit" className={styles.submitButton}>
+            Log In
           </button>
 
-          <p className={styles.signUpText}>
-            Don't have an account? <Link href="/sign-up">Sign up</Link>
+          <p className={styles.switchText}>
+            Don’t have an account?{" "}
+            <Link href="/sign-up" className={styles.switchLink}>
+              Sign up
+            </Link>
           </p>
         </form>
-      </div>
+      </main>
     </div>
   );
-};
-
-export default Login;
+}

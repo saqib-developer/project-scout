@@ -1,39 +1,23 @@
 // app/api/send-email/route.ts
-import { NextRequest, NextResponse } from "next/server";
-import sendgrid from "@sendgrid/mail";
+import { NextResponse } from "next/server";
+import { Resend } from "resend";
 
-console.log("→ [send-email] Process ENV Key:", Boolean(process.env.SENDGRID_API_KEY));
-sendgrid.setApiKey(process.env.SENDGRID_API_KEY as string);
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-export async function POST(req: NextRequest) {
-  console.log("→ [send-email] POST handler hit");
+export async function POST(req: Request) {
   try {
     const { userEmail, subject, message } = await req.json();
-    console.log("→ [send-email] Payload:", { userEmail, subject, message });
 
-    const msg = {
+    const data = await resend.emails.send({
+      from: "onboarding@resend.dev", // Must be a verified sender
       to: userEmail,
-      from: "muhammadsaqib8379@gmail.com", // must be a Verified Sender
       subject,
-      text: message,
-    };
+      html: `<p>${message}</p>`,
+    });
 
-    const result = await sendgrid.send(msg);
-    console.log("→ [send-email] SendGrid send() result:", result);
-
-    return NextResponse.json({ message: "Email sent successfully!", result });
+    return NextResponse.json({ success: true, data });
   } catch (error: any) {
-    console.error("→ [send-email] Caught Exception:", error);
-    if (error.response && error.response.body) {
-      console.error("→ [send-email] SendGrid response body:", error.response.body);
-    }
-    return NextResponse.json(
-      {
-        message: "Error sending email",
-        error: error?.message,
-        sendGridError: error.response?.body,
-      },
-      { status: 500 }
-    );
+    console.error("Resend error:", error);
+    return NextResponse.json({ success: false, error: error.message || "Something went wrong" }, { status: 500 });
   }
 }

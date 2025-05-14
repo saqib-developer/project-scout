@@ -15,7 +15,8 @@
     "next": "^15.3.1",
     "pg": "^8.11.3",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "resend": "^4.5.1"
   },
   "devDependencies": {
     "@types/node": "^22.14.1",
